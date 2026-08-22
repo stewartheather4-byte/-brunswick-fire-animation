@@ -1493,22 +1493,25 @@ def create_frame(
     # TITLE
     # =====================================================
 
+        # Main title
     fig.suptitle(
-
-        "Brunswick Creek V10742 + "
-        "Ainslie Creek V10755\n"
-
-        "NASA FIRMS Fire/Hotspot Progression\n"
-
-        + day.strftime(
-            "%B %d, %Y"
-        ),
-
+        "Brunswick Creek V10742 + Ainslie Creek V10755\n"
+        "Fire/Hotspot Progression",
         fontsize=15,
-
         weight="bold",
-
         y=0.985
+    )
+
+    # Large dark-blue date
+    fig.text(
+        0.5,
+        0.895,
+        day.strftime("%B %d, %Y"),
+        ha="center",
+        va="center",
+        fontsize=26,
+        weight="bold",
+        color="darkblue"
     )
 
 
