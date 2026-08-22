@@ -54,8 +54,7 @@ jobs:
         run: |
           python fire_animation.py
 
-           - name: Save updated FIRMS data and frames
-        run: |
+            run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -73,6 +72,8 @@ jobs:
             # Save the updated animation and frames.
             git push origin main
           fi
+          
+
 
       - name: Create Latest Wildfire Animation release
         env:
