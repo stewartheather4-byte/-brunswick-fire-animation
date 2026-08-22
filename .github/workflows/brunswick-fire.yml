@@ -10,6 +10,8 @@ on:
 permissions:
   contents: write
   actions: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: brunswick-ainslie-daily
@@ -19,8 +21,11 @@ jobs:
   update-animation:
 
     runs-on: ubuntu-latest
-
     timeout-minutes: 60
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     env:
       FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
@@ -68,11 +73,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! gh release view latest-animation >/dev/null 2>&1; then
-
             gh release create latest-animation \
               --title "Latest Wildfire Animation" \
               --notes "Automatically updated Brunswick Creek V10742 + Ainslie Creek V10755 wildfire animation."
-
           fi
 
       - name: Upload latest animation
@@ -85,6 +88,34 @@ jobs:
             output/Brunswick_Ainslie_SLIDESHOW.html \
             output/Brunswick_Ainslie_LATEST.png \
             --clobber
+
+      - name: Prepare Brunswick website
+        run: |
+          rm -rf _site
+          mkdir -p _site
+
+          cp index.html _site/index.html
+
+          cp \
+            output/Brunswick_Ainslie_SLIDESHOW.html \
+            _site/Brunswick_Ainslie_SLIDESHOW.html
+
+          touch _site/.nojekyll
+
+          echo "Website files:"
+          ls -lh _site
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Brunswick website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+      - name: Publish Brunswick website
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Stop automatic updates when fire stops expanding
         if: ${{ hashFiles('status/COMPLETE.txt') != '' }}
