@@ -1485,18 +1485,13 @@ def create_frame(
             pad=2
         ),
 
-        zorder=9
-    )
-
-
-    # =====================================================
+       # =====================================================
     # TITLE
     # =====================================================
 
-        # Main title
     fig.suptitle(
         "Brunswick Creek V10742 + Ainslie Creek V10755\n"
-        "Fire/Hotspot Progression",
+        "NASA FIRMS Fire/Hotspot Progression",
         fontsize=15,
         weight="bold",
         y=0.985
@@ -1505,14 +1500,16 @@ def create_frame(
     # Large dark-blue date
     fig.text(
         0.5,
-        0.895,
+        0.875,
         day.strftime("%B %d, %Y"),
         ha="center",
         va="center",
-        fontsize=26,
+        fontsize=30,
         weight="bold",
-        color="darkblue"
-    )
+        color="#00008B"
+    ) 
+
+  
 
 
     # =====================================================
@@ -1606,23 +1603,8 @@ def build_frames(
 ):
 
 
-    existing_frame = next(
-
-        FRAME_DIR.glob(
-            "simple_frame_*.png"
-        ),
-
-        None
-    )
-
-
-    if existing_frame is None:
-
-        regenerate_from = START_DATE
-
-    else:
-
-        regenerate_from = refresh_start
+        # FORCE ALL FRAMES TO REBUILD
+    regenerate_from = START_DATE
 
 
     log()
