@@ -1491,7 +1491,7 @@ def create_frame(
 
     fig.suptitle(
         "Brunswick Creek V10742 + Ainslie Creek V10755\n"
-        "NASA FIRMS Fire/Hotspot Progression",
+        "Fire/Hotspot Progression",
         fontsize=15,
         weight="bold",
         y=0.985
