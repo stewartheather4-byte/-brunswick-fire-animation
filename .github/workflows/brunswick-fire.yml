@@ -54,18 +54,24 @@ jobs:
         run: |
           python fire_animation.py
 
-      - name: Save updated FIRMS data and frames
+           - name: Save updated FIRMS data and frames
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data frames status
+          git add .
 
           if git diff --cached --quiet; then
-            echo "No saved data changed."
+            echo "No new wildfire files to save."
           else
             git commit -m "Update Brunswick wildfire animation"
-            git push
+
+            # Bring in anything that changed on GitHub while
+            # the animation was being created.
+            git pull --rebase origin main
+
+            # Save the updated animation and frames.
+            git push origin main
           fi
 
       - name: Create Latest Wildfire Animation release
