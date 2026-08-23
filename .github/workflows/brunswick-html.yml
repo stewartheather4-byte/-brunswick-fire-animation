@@ -1,0 +1,71 @@
+name: Brunswick HTML Wildfire Animation
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: brunswick-html-only
+  cancel-in-progress: false
+
+jobs:
+  update-animation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    env:
+      FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Restore FIRMS cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: brunswick-firms-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            brunswick-firms-${{ runner.os }}-
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests pandas
+
+      - name: Build HTML-only Brunswick animation
+        run: python fire_animation.py
+
+      - name: Save FIRMS cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: brunswick-firms-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload HTML website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy Brunswick HTML animation
+        id: deployment
+        uses: actions/deploy-pages@v4
