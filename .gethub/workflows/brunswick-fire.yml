@@ -1,1 +1,136 @@
+name: Brunswick + Ainslie Wildfire Animation
 
+on:
+  workflow_dispatch:
+
+  schedule:
+    - cron: '0 23 * * *'
+      timezone: "America/Vancouver"
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  actions: write
+
+concurrency:
+  group: brunswick-ainslie-daily
+  cancel-in-progress: false
+
+jobs:
+  update-animation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    env:
+      FIRMS_MAP_KEY: ${{ secrets.FIRMS_MAP_KEY }}
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Install Python packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Brunswick wildfire animation
+        run: |
+          echo "Files GitHub can see:"
+          find . -maxdepth 3 -type f -print
+
+          SCRIPT=$(find . -maxdepth 3 -type f \
+            \( -name "fire_animation.py" -o -name "brunswick_fire_animation.py" \) \
+            | head -n 1)
+
+          if [ -z "$SCRIPT" ]; then
+            echo "ERROR: Brunswick animation Python file was not found."
+            exit 1
+          fi
+
+          echo "Running: $SCRIPT"
+          python "$SCRIPT"
+
+      - name: Save FIRMS cache and stop status
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/ stop_updates.flag 2>/dev/null || true
+
+          if git diff --cached --quiet; then
+            echo "No cache/status changes to commit."
+          else
+            git commit -m "Update Brunswick wildfire data $(date -u +%F)"
+            git push
+          fi
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages website
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - name: Deploy Brunswick animation website
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Publish latest animation files
+        run: |
+          FILES=""
+
+          for f in \
+            brunswick_fire_animation.mp4 \
+            brunswick_fire_animation.gif \
+            latest.png \
+            brunswick_latest.png
+          do
+            if [ -f "$f" ]; then
+              FILES="$FILES $f"
+            fi
+          done
+
+          if [ -z "$FILES" ]; then
+            echo "No animation files available for release."
+            exit 0
+          fi
+
+          if gh release view latest-animation >/dev/null 2>&1; then
+            gh release upload latest-animation $FILES --clobber
+          else
+            gh release create latest-animation \
+              $FILES \
+              --title "Latest Brunswick Wildfire Animation" \
+              --notes "Latest Brunswick Creek V10742 and Ainslie Creek V10755 wildfire animation."
+          fi
+
+      - name: Stop daily updates when fire stops expanding
+        if: ${{ hashFiles('stop_updates.flag') != '' }}
+        run: |
+          echo "stop_updates.flag found."
+          echo "Disabling automatic Brunswick wildfire updates."
+
+          gh api \
+            --method PUT \
+            repos/${GITHUB_REPOSITORY}/actions/workflows/brunswick-fire.yml/disable
